@@ -1,0 +1,23 @@
+{
+  "name": "stacks-bitcoin-api",
+  "version": "0.0.1",
+  "description": "Verify Bitcoin transactions using the clarity-bitcoin utility on stacks",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "run": "npx ts-node src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.0.1",
+    "node-fetch": "^3.2.5",
+    "ts-node": "^10.8.0",
+    "typescript": "^4.7.2",
+    "varint": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/varint": "^6.0.0"
+  }
+}
