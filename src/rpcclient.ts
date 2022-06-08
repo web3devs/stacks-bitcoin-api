@@ -1,12 +1,12 @@
-import fetch from "node-fetch";
 import { parseRawProof } from "./txproof.js";
 import 'dotenv/config'
 
-const rpcUrl = process.env.RPCURL as string
-const apiKey = process.env.APIKEY as string
+const VERBOSE = 2
+
+const {RPCURL, APIKEY} = process.env
 
 const callRpc = async (method: string, params: any[]): Promise<any> => {
-    const response = await fetch(rpcUrl, {
+    const response = await fetch(RPCURL as string, {
         method: 'POST',
         body: JSON.stringify({
             "jsonrpc": "2.0",
@@ -16,7 +16,7 @@ const callRpc = async (method: string, params: any[]): Promise<any> => {
         }),
         headers: {
             'Content-Type': 'application/json',
-            'x-api-key': apiKey
+            'x-api-key': APIKEY as string
         }
     })
 
@@ -35,3 +35,6 @@ export const getBlockHeader = (blockhash: string, verbose: boolean = false) =>
 
 export const getTxOutProof = async (txids: String[], blockhash: string) =>
     parseRawProof(await callRpc('gettxoutproof', [txids, blockhash]))
+
+export const getBlock = async (blockhash: String, verbosity: number = VERBOSE) =>
+    callRpc('getblock', [blockhash, verbosity])

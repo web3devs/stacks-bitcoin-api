@@ -1,22 +1,24 @@
 import varint from "varint";
 
 export interface ParsedProof {
-    header: String,
+    blockHeader: string,
     txCount: number,
-    hashes: String[],
-    flags: String
+    hashes: string[],
+    flags: string
 }
 
-export const parseRawProof = (proof: Buffer | String): ParsedProof => {
+export const parseRawProof = (proof: Buffer | string): ParsedProof => {
     let cursor = 0
 
     const proofBuff: Buffer = typeof proof === 'string' ? Buffer.from(proof, 'hex') : proof as Buffer
 
-    const header = proofBuff.subarray(cursor, 80).toString('hex')
+    const blockHeader = proofBuff.subarray(cursor, 80).toString('hex')
     cursor += 80
 
     const txCount = proofBuff.readUInt32LE(cursor)
     cursor += 4
+
+    console.log('txcount:', txCount)
 
     const hashCount = varint.decode(proofBuff, cursor)
     cursor += varint.encodingLength(hashCount)
@@ -26,14 +28,15 @@ export const parseRawProof = (proof: Buffer | String): ParsedProof => {
         hashes.push(proofBuff.subarray(cursor, cursor + 32).toString('hex'))
         cursor += 32
     }
-    const flagbitCount = varint.decode(proofBuff, cursor)
-    cursor += varint.encodingLength(flagbitCount)
+    const bytesOfFlagBits = varint.decode(proofBuff, cursor)
+    cursor += varint.encodingLength(bytesOfFlagBits)
 
-    const flagsLength = Math.ceil(8 / flagbitCount)
-    const flags = proofBuff.subarray(cursor, cursor + flagsLength).toString('hex')
+    const flags = proofBuff.subarray(cursor, cursor + bytesOfFlagBits).toString('hex')
+    console.log('flag bits:', bytesOfFlagBits)
+    console.log('flags:', flags)
 
-    cursor += flagsLength
+    console.assert(cursor + bytesOfFlagBits === proofBuff.length, "Proof not read correctly")
 
-    return {header, txCount, hashes, flags}
+    return {blockHeader, txCount, hashes, flags}
 }
 
