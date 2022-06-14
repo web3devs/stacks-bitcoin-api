@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@stacks/blockchain-api-client": "^4.0.1",
     "@stacks/connect": "^6.8.4",
     "@stacks/transactions": "^4.2.1",
     "@types/crypto-js": "^4.1.1",
