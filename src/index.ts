@@ -33,14 +33,18 @@ interface ProvableTx {
 
 const txid = "20f85e35d02e28ac89db8764e280db560de1baaa3ce66f15dcea349fb137879c"
 
-const reverseBuffer = (src: Buffer): Buffer => {
-    var buffer = Buffer.alloc(src.length)
-    for (var i = 0, j = src.length - 1; i <= j; ++i, --j) {
-        buffer[i] = src[j]
-        buffer[j] = src[i]
+const reverseBuffer = (buffer: Buffer): Buffer => {
+    for (let i = 0, j = buffer.length - 1; i < j; ++i, --j) {
+        [buffer[i], buffer[j]] = [buffer[j], buffer[i]]
     }
     return buffer
 }
+
+console.assert(
+    reverseBuffer(Buffer.from('00010203', 'hex'))
+        .equals(Buffer.from('03020100', 'hex')),
+    'Reverse buffer failed'
+)
 
 const getTxProof = async (txId: string): Promise<ProvableTx> => {
     // TODO Make this work for segwit txs
