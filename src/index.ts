@@ -1,18 +1,8 @@
 import {getBlock, getBlockHeader, getRawTransaction} from "./rpcclient.js" // TODO Why is the .js extension required?
-import {
-    BufferCV,
-    bufferCV,
-    callReadOnlyFunction,
-    ClarityValue,
-    cvToValue,
-    listCV,
-    tupleCV,
-    uintCV,
-} from "@stacks/transactions"
 import 'dotenv/config'
 import {MerkleTree} from "merkletreejs"
 import SHA256 from "crypto-js/sha256.js"
-import {verifyBlockHeader, getReversedTxId, verifyProofOnStacks} from "./ClarityBitcoinClient.js"
+import {verifyBlockHeader, getReversedTxId, verifyProofOnStacks, getBlockHeaderHash} from "./ClarityBitcoinClient.js"
 import {getStxBlockHeight} from "./BlockApiClient.js"
 
 const {
@@ -54,32 +44,12 @@ const getTxProof = async (txId: string): Promise<ProvableTx> => {
     return { tx, txId, txIndex, stxBlockHeight, blockHeader, proof }
 }
 
-
-const getBlockHeaderHash = async (blockHeight: number): Promise<any> => {
-    // (get-bc-h-hash (bh uint))
-    const functionName = 'get-bc-h-hash'
-    const functionArgs: ClarityValue[] = [
-        uintCV(58225)
-    ]
-
-    const result = await callReadOnlyFunction({
-        contractName: CLARITY_BITCOIN_CONTRACT_NAME as string,
-        contractAddress: CLARITY_BITCOIN_CONTRACT_ADDRESS as string,
-        functionName,
-        functionArgs,
-        network: NETWORK as any,
-        senderAddress: SENDER_ADDRESS as string,
-    })
-    return cvToValue(result)
-
-}
-
 getTxProof(txid)
-    // .then(getBlockHeaderHash)
+    .then(({blockHeader, stxBlockHeight}: ProvableTx) => getBlockHeaderHash(stxBlockHeight))
     // .then(({blockHeader, stxBlockHeight}: ProvableTx) =>
     //     verifyBlockHeader(blockHeader, stxBlockHeight))
-    .then(({ stxBlockHeight, blockHeader, tx, txIndex, proof }: ProvableTx) =>
-        verifyProofOnStacks(stxBlockHeight, blockHeader, tx, txIndex, proof))
+    // .then(({ stxBlockHeight, blockHeader, tx, txIndex, proof }: ProvableTx) =>
+    //     verifyProofOnStacks(stxBlockHeight, blockHeader, tx, txIndex, proof))
     // .then(async ({tx, txId}: ProvableTx): Promise<Buffer> => {
     //     const result = await getReversedTxId(tx)
     //     console.assert(reverseBuffer(Buffer.from(txId, 'hex')).equals(result), txId)

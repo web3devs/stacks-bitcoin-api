@@ -5,6 +5,7 @@ import {
     ClarityValue,
     cvToValue,
     listCV,
+    SomeCV,
     tupleCV,
     uintCV
 } from "@stacks/transactions";
@@ -84,4 +85,20 @@ export const verifyProofOnStacks = async (stxBlockHeight: number, blockHeader: B
         senderAddress: SENDER_ADDRESS as string,
     })
     return cvToValue(result).value
+}
+
+export const getBlockHeaderHash = async (stxBlockHeight: number): Promise<Buffer> => {
+    // (get-bc-h-hash (bh uint))
+    const functionName = 'get-bc-h-hash'
+    const functionArgs: ClarityValue[] = [ uintCV(stxBlockHeight) ]
+
+    const result = await callReadOnlyFunction({
+        contractName: CLARITY_BITCOIN_CONTRACT_NAME as string,
+        contractAddress: CLARITY_BITCOIN_CONTRACT_ADDRESS as string,
+        functionName,
+        functionArgs,
+        network: NETWORK as any,
+        senderAddress: SENDER_ADDRESS as string,
+    }) as SomeCV<BufferCV>
+    return cvToBuffer(result.value)
 }
