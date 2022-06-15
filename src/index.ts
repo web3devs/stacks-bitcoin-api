@@ -12,7 +12,7 @@ import {
 import 'dotenv/config'
 import {MerkleTree} from "merkletreejs"
 import SHA256 from "crypto-js/sha256.js"
-import {verifyBlockHeader} from "./ClarityBitcoinClient.js"
+import {verifyBlockHeader, getReversedTxId} from "./ClarityBitcoinClient.js"
 import {getStxBlockHeight} from "./BlockApiClient.js"
 
 const {
@@ -87,25 +87,6 @@ const getBlockHeaderHash = async (blockHeight: number): Promise<any> => {
 
 }
 
-const getReversedTxId = async ({tx, txId}: ProvableTx): Promise<any> => {
-    // (define-read-only (get-reversed-txid (tx (buff 1024)))
-    const functionName = 'get-reversed-txid'
-    const functionArgs: ClarityValue[] = [
-        bufferCV(tx)
-    ]
-
-    const result = await callReadOnlyFunction({
-        contractName: CLARITY_BITCOIN_CONTRACT_NAME as string,
-        contractAddress: CLARITY_BITCOIN_CONTRACT_ADDRESS as string,
-        functionName,
-        functionArgs,
-        network: NETWORK as any,
-        senderAddress: SENDER_ADDRESS as string,
-    })
-    console.assert(reverseBuffer(Buffer.from(txId, 'hex')).toString('hex') === cvToValue(result), txId)
-    return cvToValue(result)
-}
-
 const verifyProofOnStacks = async ({ stxBlockHeight, blockHeader, tx, txIndex, proof }: ProvableTx): Promise<boolean> => {
     console.assert(blockHeader.length === 80, "header length incorrect")
     console.assert(tx.length <= 1024, "tx too long")
@@ -136,11 +117,17 @@ const verifyProofOnStacks = async ({ stxBlockHeight, blockHeader, tx, txIndex, p
     return cvToValue(result).value
 }
 
+
+
 getTxProof(txid)
     // .then(getBlockHeaderHash)
-    .then(({blockHeader, stxBlockHeight}: ProvableTx): Promise<boolean> =>
-        verifyBlockHeader(blockHeader, stxBlockHeight))
+    // .then(({blockHeader, stxBlockHeight}: ProvableTx): Promise<boolean> =>
+    //     verifyBlockHeader(blockHeader, stxBlockHeight))
     // .then(verifyProofOnStacks)
-    // .then(getReversedTxId)
+    .then(async ({tx, txId}: ProvableTx): Promise<Buffer> => {
+        const result = await getReversedTxId(tx)
+        console.assert(reverseBuffer(Buffer.from(txId, 'hex')).equals(result), txId)
+        return result
+    })
     .then(console.log)
     .catch(console.error)

@@ -1,4 +1,4 @@
-import {bufferCV, callReadOnlyFunction, ClarityValue, cvToValue, uintCV} from "@stacks/transactions";
+import {BufferCV, bufferCV, callReadOnlyFunction, ClarityValue, cvToValue, uintCV} from "@stacks/transactions";
 
 const {
     CLARITY_BITCOIN_CONTRACT_NAME,
@@ -22,22 +22,22 @@ export const verifyBlockHeader = async (blockHeader: Buffer, stxBlockHeight: num
     })
     return cvToValue(result)
 }
-//
-// export const getReversedTxId = async (tx: Buffer): Promise<any> => {
-//     // (define-read-only (get-reversed-txid (tx (buff 1024)))
-//     const functionName = 'get-reversed-txid'
-//     const functionArgs: ClarityValue[] = [
-//         bufferCV(tx)
-//     ]
-//
-//     const result = await callReadOnlyFunction({
-//         contractName: CLARITY_BITCOIN_CONTRACT_NAME as string,
-//         contractAddress: CLARITY_BITCOIN_CONTRACT_ADDRESS as string,
-//         functionName,
-//         functionArgs,
-//         network: NETWORK as any,
-//         senderAddress: SENDER_ADDRESS as string,
-//     })
-//     return cvToValue(result)
-// }
-//
+
+const cvToBuffer = (cv: BufferCV): Buffer => Buffer.from(cvToValue(cv).slice(2), 'hex')
+export const getReversedTxId = async (tx: Buffer): Promise<Buffer> => {
+    // (define-read-only (get-reversed-txid (tx (buff 1024)))
+    const functionName = 'get-reversed-txid'
+    const functionArgs: ClarityValue[] = [
+        bufferCV(tx)
+    ]
+
+    const result = await callReadOnlyFunction({
+        contractName: CLARITY_BITCOIN_CONTRACT_NAME as string,
+        contractAddress: CLARITY_BITCOIN_CONTRACT_ADDRESS as string,
+        functionName,
+        functionArgs,
+        network: NETWORK as any,
+        senderAddress: SENDER_ADDRESS as string,
+    }) as BufferCV
+    return cvToBuffer(result)
+}
