@@ -15,6 +15,7 @@
     "@stacks/connect": "^6.8.4",
     "@stacks/transactions": "^4.2.1",
     "@types/crypto-js": "^4.1.1",
+    "bn.js": "^5.2.1",
     "buffer-reverse": "^1.0.1",
     "cryptojs": "^2.5.3",
     "dotenv": "^16.0.1",

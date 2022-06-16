@@ -19,16 +19,13 @@ const callRpc = async (method: string, params: any[]): Promise<any> => {
             'x-api-key': APIKEY as string
         }
     })
-
     const responseJson: any = await response.json()
-
     if (responseJson.error) throw responseJson.error
-
     return responseJson.result
 }
 
-export const getRawTransaction = (txid: string, verbose: boolean = false) =>
-    callRpc('getrawtransaction', [txid, verbose])
+export const getRawTransaction = (txid: string, verbose: boolean = false, blockhash?: string) =>
+    callRpc('getrawtransaction', [txid, verbose, blockhash])
 
 export const getBlockHeader = (blockhash: string, verbose: boolean = false) =>
     callRpc('getblockheader', [blockhash, verbose])

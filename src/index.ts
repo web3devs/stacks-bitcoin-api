@@ -1,9 +1,10 @@
-import {getBlock, getBlockHeader, getRawTransaction} from "./rpcclient.js" // TODO Why is the .js extension required?
+import {getBlock, getBlockHeader, getRawTransaction} from "./BitcoinRpcClient.js" // TODO Why is the .js extension required?
 import 'dotenv/config'
 import {MerkleTree} from "merkletreejs"
 import SHA256 from "crypto-js/sha256.js"
-import {verifyBlockHeader, getReversedTxId, verifyProofOnStacks, getBlockHeaderHash} from "./ClarityBitcoinClient.js"
+import {getBlockHeaderHash, getReversedTxId, verifyBlockHeader, verifyProofOnStacks} from "./ClarityBitcoinClient.js"
 import {getStxBlockHeight} from "./BlockApiClient.js"
+import BigNumber from 'BigNumber.js'
 
 const {
     CLARITY_BITCOIN_CONTRACT_NAME,
@@ -44,16 +45,57 @@ const getTxProof = async (txId: string): Promise<ProvableTx> => {
     return { tx, txId, txIndex, stxBlockHeight, blockHeader, proof }
 }
 
-getTxProof(txid)
+const txProofPromise = getTxProof(txid)
+
+txProofPromise
     .then(({blockHeader, stxBlockHeight}: ProvableTx) => getBlockHeaderHash(stxBlockHeight))
-    // .then(({blockHeader, stxBlockHeight}: ProvableTx) =>
-    //     verifyBlockHeader(blockHeader, stxBlockHeight))
-    // .then(({ stxBlockHeight, blockHeader, tx, txIndex, proof }: ProvableTx) =>
-    //     verifyProofOnStacks(stxBlockHeight, blockHeader, tx, txIndex, proof))
-    // .then(async ({tx, txId}: ProvableTx): Promise<Buffer> => {
-    //     const result = await getReversedTxId(tx)
-    //     console.assert(reverseBuffer(Buffer.from(txId, 'hex')).equals(result), txId)
-    //     return result
-    // })
+    .then(r => console.log(`getBlockheaderHash ${r.toString('hex')}`))
+    .catch(console.error)
+
+txProofPromise
+    .then(({blockHeader, stxBlockHeight}: ProvableTx) =>
+        verifyBlockHeader(blockHeader, stxBlockHeight))
+    .then(r => console.log(`verifyBlockHeader ${r}`))
+    .catch(console.error)
+
+txProofPromise
+    .then(({ stxBlockHeight, blockHeader, tx, txIndex, proof }: ProvableTx) =>
+        verifyProofOnStacks(stxBlockHeight, blockHeader, tx, txIndex, proof))
+    .then(r => console.log(`verifyProofOfStacks ${r}`))
+    .catch(console.error)
+
+txProofPromise
+    .then(({tx, txId}: ProvableTx) => getReversedTxId(tx))
+    .then(r => console.log(`getReversedTxId ${r.toString('hex')}`))
+    .catch(console.error)
+
+const SATOSHIS_PER_BITCOIN = new BigNumber("100000000")
+const toSatoshis = (v: number): string => new BigNumber(v).times(SATOSHIS_PER_BITCOIN).toString()
+
+/*
+{
+    "value": 0.00006121,
+    "n": 1,
+    "scriptPubKey": {
+      "asm": "OP_DUP OP_HASH160 0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG",
+      "desc": "addr(mfWxJ45yp2SFn7UciZyNpvDKrzbhyfKrY8)#ydtjlapp",
+      "hex": "76a914000000000000000000000000000000000000000088ac",
+      "address": "mfWxJ45yp2SFn7UciZyNpvDKrzbhyfKrY8",
+      "type": "pubkeyhash"
+    }
+  },
+*/
+
+getRawTransaction(txid, true)
+    .then(({vin, vout, hex}) => {
+        // console.log(JSON.stringify(vin, undefined, 2))
+        // console.log(JSON.stringify(vout, undefined, 2))
+        const outputs = vout.map(({value, scriptPubKey: {hex}}: any) => (
+            {value: toSatoshis(value), scriptPubKey: Buffer.from(hex, 'hex')}
+        ))
+        return outputs
+
+
+    })
     .then(console.log)
     .catch(console.error)
