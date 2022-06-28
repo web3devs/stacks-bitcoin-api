@@ -207,19 +207,15 @@ export const concatTx = async (tx: TupleCV<TxDataCV>): Promise<Buffer> => {
         contractName: CLARITY_BITCOIN_CONTRACT_NAME as string,
         contractAddress: CLARITY_BITCOIN_CONTRACT_ADDRESS as string,
         functionName: 'concat-tx',
-        functionArgs: [ tx ],
+        functionArgs: [tx],
         network: NETWORK as any,
         senderAddress: SENDER_ADDRESS as string,
     })
     return cvToBuffer(result as BufferCV)
 }
 
-export const verifyCompactTx = async (
-    header: TupleCV,
-    tx: BufferCV,
-    proof: TupleCV,
-): Promise<any> => {
-    const result = await callReadOnlyFunction({
+export const verifyCompactTx = (header: TupleCV, tx: BufferCV, proof: TupleCV,): Promise<ClarityValue> =>
+    callReadOnlyFunction({
         contractName: CLARITY_BITCOIN_CONTRACT_NAME as string,
         contractAddress: CLARITY_BITCOIN_CONTRACT_ADDRESS as string,
         functionName: 'was-tx-mined-compact',
@@ -227,34 +223,34 @@ export const verifyCompactTx = async (
         network: NETWORK as any,
         senderAddress: SENDER_ADDRESS as string,
     });
-    return cvToValue(result)
-}
 
-export const verifyTx = async (
-    header: TupleCV,
-    tx: BufferCV,
-    proof: TupleCV
-): Promise<any> => {
-    const transaction = await callReadOnlyFunction({
+export const verifyTx = (header: TupleCV, tx: BufferCV, proof: TupleCV): Promise<ClarityValue> =>
+    callReadOnlyFunction({
         contractName: CLARITY_BITCOIN_CONTRACT_NAME as string,
         contractAddress: CLARITY_BITCOIN_CONTRACT_ADDRESS as string,
         functionName: 'was-tx-mined',
         functionArgs: [header, tx, proof],
         network: NETWORK as any,
         senderAddress: SENDER_ADDRESS as string,
-    });
-    return transaction
-}
+    })
 
-export const parseTx = async (tx: BufferCV): Promise<any> => {
-    const result = await callReadOnlyFunction({
+export const concatHeader = (header: TupleCV,): Promise<ClarityValue> =>
+    callReadOnlyFunction({
         contractName: CLARITY_BITCOIN_CONTRACT_NAME as string,
         contractAddress: CLARITY_BITCOIN_CONTRACT_ADDRESS as string,
-        functionName: 'parse-tx',
-        functionArgs: [ tx ],
+        functionName: 'concat-header',
+        functionArgs: [header],
         network: NETWORK as any,
         senderAddress: SENDER_ADDRESS as string,
     })
-    return cvToJSON(result)
-}
+
+export const parseTx = (tx: BufferCV): Promise<ClarityValue> =>
+    callReadOnlyFunction({
+        contractName: CLARITY_BITCOIN_CONTRACT_NAME as string,
+        contractAddress: CLARITY_BITCOIN_CONTRACT_ADDRESS as string,
+        functionName: 'parse-tx',
+        functionArgs: [tx],
+        network: NETWORK as any,
+        senderAddress: SENDER_ADDRESS as string,
+    })
 

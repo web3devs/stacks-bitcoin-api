@@ -6,6 +6,7 @@ const { NETWORK } = process.env
 const config = new Configuration({basePath: `https://stacks-node-api.${NETWORK}.stacks.co`})
 const blocksApi = new BlocksApi(config)
 
+// TODO This function occasionally misses the block, the binary search algo needs more analysis
 export async function getStxBlockHeight(bitcoinBlockHeight: number): Promise<number | undefined> {
     let limit = 30;
     let minOffset = 0, maxOffset = 0, offset = 0;
@@ -19,7 +20,7 @@ export async function getStxBlockHeight(bitcoinBlockHeight: number): Promise<num
     minOffset = limit
     maxOffset = offset
     while (!stxBlock) {
-        console.log('offsets:', minOffset, offset, maxOffset)
+        // console.log('offsets:', minOffset, offset, maxOffset)
         const blockListResponse = await blocksApi.getBlockList({ offset, limit });
         const blocks = blockListResponse.results;
 
@@ -28,18 +29,18 @@ export async function getStxBlockHeight(bitcoinBlockHeight: number): Promise<num
             min: blocks[blocks.length-1].burn_block_height,
             max:  blocks[0].burn_block_height
         }
-        console.log('heights:', range.min, bitcoinBlockHeight, range.max)
+        // console.log('heights:', range.min, bitcoinBlockHeight, range.max)
         switch (compareToRange(bitcoinBlockHeight, range)) {
             case RangeComparison.Contained:
-                console.log('contained')
+                // console.log('contained')
                 stxBlock = blocks.find(b => b.burn_block_height === bitcoinBlockHeight)
                 return stxBlock?.height
             case RangeComparison.Above:
-                console.log('above')
+                // console.log('above')
                 maxOffset = Math.max(offset - limit, minOffset)
                 break
             case RangeComparison.Below:
-                console.log('below')
+                // console.log('below')
                 minOffset = Math.min(offset + limit, maxOffset)
                 break
         }
@@ -47,7 +48,7 @@ export async function getStxBlockHeight(bitcoinBlockHeight: number): Promise<num
             return undefined
         }
         // Binary search to avoid api throttling
-        offset = Math.floor((minOffset + maxOffset ) / 2)
+        offset = Math.floor((minOffset + maxOffset) / 2)
     }
     return stxBlock?.height;
 }
