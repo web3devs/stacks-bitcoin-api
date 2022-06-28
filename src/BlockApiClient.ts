@@ -1,4 +1,5 @@
-import {BlocksApi, Configuration} from "@stacks/blockchain-api-client";
+import {BlocksApi, Configuration} from "@stacks/blockchain-api-client"
+import {compareToRange, Range, RangeComparison} from "./utils.js"
 
 const { NETWORK } = process.env
 
@@ -7,18 +8,47 @@ const blocksApi = new BlocksApi(config)
 
 export async function getStxBlockHeight(bitcoinBlockHeight: number): Promise<number | undefined> {
     let limit = 30;
-    let offset = 0;
+    let minOffset = 0, maxOffset = 0, offset = 0;
+
+    // First check recent blocks
     const firstResponse = await blocksApi.getBlockList({ offset, limit });
     let stxBlock = firstResponse.results.find(b => b.burn_block_height === bitcoinBlockHeight);
-    offset += Math.max(limit, firstResponse.results[0].burn_block_height - bitcoinBlockHeight);
+
+    // Next check the furthest possible block
+    offset += Math.max(limit, firstResponse.results[0].burn_block_height - bitcoinBlockHeight)
+    minOffset = limit
+    maxOffset = offset
     while (!stxBlock) {
+        console.log('offsets:', minOffset, offset, maxOffset)
         const blockListResponse = await blocksApi.getBlockList({ offset, limit });
         const blocks = blockListResponse.results;
-        stxBlock = blocks.find(b => b.burn_block_height === bitcoinBlockHeight);
-        offset -= limit;
-        if (offset < 0 || blocks[blocks.length - 1].burn_block_height > bitcoinBlockHeight)
-            return undefined;
+
+        // The block list has the most recent block first, so it has the maximum block height
+        const range: Range = {
+            min: blocks[blocks.length-1].burn_block_height,
+            max:  blocks[0].burn_block_height
+        }
+        console.log('heights:', range.min, bitcoinBlockHeight, range.max)
+        switch (compareToRange(bitcoinBlockHeight, range)) {
+            case RangeComparison.Contained:
+                console.log('contained')
+                stxBlock = blocks.find(b => b.burn_block_height === bitcoinBlockHeight)
+                return stxBlock?.height
+            case RangeComparison.Above:
+                console.log('above')
+                maxOffset = Math.max(offset - limit, minOffset)
+                break
+            case RangeComparison.Below:
+                console.log('below')
+                minOffset = Math.min(offset + limit, maxOffset)
+                break
+        }
+        if (offset < 0 || maxOffset < minOffset) {
+            return undefined
+        }
+        // Binary search to avoid api throttling
+        offset = Math.floor((minOffset + maxOffset ) / 2)
     }
-    return stxBlock.height;
+    return stxBlock?.height;
 }
 

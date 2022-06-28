@@ -1,12 +1,12 @@
-import { parseRawProof } from "./txproof.js";
 import 'dotenv/config'
-
-const VERBOSE = 2
+import {Buffer} from "buffer"
+import {hexOrBufferToHex} from "./utils.js"
 
 const {RPCURL, APIKEY} = process.env
 
 const callRpc = async (method: string, params: any[]): Promise<any> => {
-    const response = await fetch(RPCURL as string, {
+    // TODO Make this work with the bitcoin node in the clarinet integrate environment
+    const init = {
         method: 'POST',
         body: JSON.stringify({
             "jsonrpc": "2.0",
@@ -16,22 +16,21 @@ const callRpc = async (method: string, params: any[]): Promise<any> => {
         }),
         headers: {
             'Content-Type': 'application/json',
-            'x-api-key': APIKEY as string
+            'x-api-key': APIKEY as string,
         }
-    })
+    };
+    const response = await fetch(RPCURL as string, init)
+    console.assert(response.status !== 401, response.status)
     const responseJson: any = await response.json()
-    if (responseJson.error) throw responseJson.error
+    console.assert(!responseJson.error, JSON.stringify(responseJson.error))
     return responseJson.result
 }
 
-export const getRawTransaction = (txid: string, verbose: boolean = false, blockhash?: string) =>
-    callRpc('getrawtransaction', [txid, verbose, blockhash])
+export const getTransactionDetails = (txid: string | Buffer) =>
+    callRpc('getrawtransaction', [hexOrBufferToHex(txid), true])
 
-export const getBlockHeader = (blockhash: string, verbose: boolean = false) =>
-    callRpc('getblockheader', [blockhash, verbose])
+export const getRawBlockHeader = (blockhash: string | Buffer) =>
+    callRpc('getblockheader', [hexOrBufferToHex(blockhash), false])
 
-export const getTxOutProof = async (txids: String[], blockhash: string) =>
-    parseRawProof(await callRpc('gettxoutproof', [txids, blockhash]))
-
-export const getBlock = async (blockhash: String, verbosity: number = VERBOSE) =>
-    callRpc('getblock', [blockhash, verbosity])
+export const getBlockStats = (blockhash: string | Buffer) =>
+    callRpc('getblock', [hexOrBufferToHex(blockhash), 1])

@@ -90,6 +90,15 @@
     "@types/node" "^14.14.43"
     buffer "^6.0.3"
 
+"@stacks/common@^4.3.0":
+  version "4.3.0"
+  resolved "https://registry.yarnpkg.com/@stacks/common/-/common-4.3.0.tgz#add68aa8ab09da20c7ed7e3aad0c88cc4374de81"
+  integrity sha512-3/n3E9VGoE/cTPfdBUmFHNer33UZtCiugV0uodXfdUfNbHfILLgk0acTVMI04FufFkglhS3seiOD+R5Z2pBUYA==
+  dependencies:
+    "@types/bn.js" "^5.1.0"
+    "@types/node" "^14.14.43"
+    buffer "^6.0.3"
+
 "@stacks/connect-ui@5.5.0":
   version "5.5.0"
   resolved "https://registry.yarnpkg.com/@stacks/connect-ui/-/connect-ui-5.5.0.tgz#ed4158f83b7494dddbcf8b1504b05663e76a151a"
@@ -133,6 +142,14 @@
   integrity sha512-Rb0Cj4/wwdL3tLngkGEOQvmpsvALFf4z704xRC6P682wkjgsXSDCaq/IlQ0tc7VDLuY/W6kMcIDM/aI5ZmeH6w==
   dependencies:
     "@stacks/common" "^4.2.1"
+    cross-fetch "^3.1.5"
+
+"@stacks/network@^4.3.0":
+  version "4.3.0"
+  resolved "https://registry.yarnpkg.com/@stacks/network/-/network-4.3.0.tgz#5d2815078d2baea7cccc45117b26a675de5d5908"
+  integrity sha512-X97IFfhJe5aZu8F1tOvYCzoIxPD5PH/NB24/WDZ+JH5Loho1D7zk1zZ6bOtQknaSfezDyi6wsZwKC/7Mxg959A==
+  dependencies:
+    "@stacks/common" "^4.3.0"
     cross-fetch "^3.1.5"
 
 "@stacks/prettier-config@0.0.8":

@@ -1,10 +1,14 @@
-import {getBlock, getBlockHeader, getRawTransaction} from "./BitcoinRpcClient.js" // TODO Why is the .js extension required?
+import {getBlockStats, getRawBlockHeader, getTransactionDetails} from "./BitcoinRpcClient.js" // TODO Why is the .js extension required?
 import 'dotenv/config'
 import {MerkleTree} from "merkletreejs"
 import SHA256 from "crypto-js/sha256.js"
-import {getBlockHeaderHash, getReversedTxId, verifyBlockHeader, verifyProofOnStacks} from "./ClarityBitcoinClient.js"
 import {getStxBlockHeight} from "./BlockApiClient.js"
 import BigNumber from 'BigNumber.js'
+import BN from "bn.js";
+import {hexOrBufferToBuffer, hexOrBufferToHex, numberToBuffer, reverseBuffer} from "./utils.js";
+import {verifyCompactTx, verifyTx} from "./ClarityBitcoinClient.js";
+import {BufferCV, bufferCV, cvToValue, listCV, tupleCV, uintCV} from "@stacks/transactions";
+import {ClarityValue} from "@stacks/transactions/dist/clarity";
 
 const {
     CLARITY_BITCOIN_CONTRACT_NAME,
@@ -15,87 +19,118 @@ const {
 
 interface ProvableTx {
     tx: Buffer,
-    txId: string,
+    txId: Buffer,
     txIndex: number,
     stxBlockHeight: number,
     blockHeader: Buffer,
     proof: Buffer[],
+    txDetail: any,
+    blockDetail: any,
 }
 
+// const txid = "4a992428186ef340c1137509c484f55793afe6a091dc1ae40169794a4b68a52c"
 const txid = "20f85e35d02e28ac89db8764e280db560de1baaa3ce66f15dcea349fb137879c"
+// const txid = "4204768f4e125d97d36cf7769adea9140fa28e359ad4d9757e8d8f86cd152050"
 
-const getTxProof = async (txId: string): Promise<ProvableTx> => {
+const getTxProof = async (txId: string | Buffer): Promise<ProvableTx> => {
     // TODO Make this work for segwit txs
-    // console.log(await getRawTransaction(txid, true))
-    const { blockhash, hex } = await getRawTransaction(txid, true)
-    const tx = Buffer.from(hex, 'hex')
-    // console.log(tx.length)
-    const blockHeader = Buffer.from(await getBlockHeader(blockhash), 'hex')
-    // console.log(reverseBuffer(blockHeader.subarray(36, 68)).toString('hex'))
-    const { tx: txIds, height } = await getBlock(blockhash, 1)
-    const stxBlockHeight = await getStxBlockHeight(height) as number
-    const txIndex = txIds.findIndex((id: string) => id === txId);
-    const tree = new MerkleTree(txIds, SHA256, { isBitcoinTree: true });
-    // console.log(tree.toString())
-    const treeDepth = tree.getDepth();
-    const proof = tree.getProof(txId, txIndex).map(p => p.data);
+    // TODO add handling of unknown transaction errors
+    const txIdHex = hexOrBufferToHex(txId)
+    const txDetail = await getTransactionDetails(txIdHex)
+    const blockHeader = Buffer.from(await getRawBlockHeader(txDetail.blockhash), 'hex')
+    console.log(blockHeader.toString('hex'))
+    const blockDetail = await getBlockStats(txDetail.blockhash)
+    const stxBlockHeight = await getStxBlockHeight(blockDetail.height) as number
+    const txIndex = blockDetail.tx.findIndex((id: string) => id === txId)
+    const tree = new MerkleTree(blockDetail.tx, SHA256, {isBitcoinTree: true})
+    const proof = tree.getProof(blockDetail.tx, txIndex).map(p => p.data)
 
-    console.assert(proof.length === treeDepth, "treeDepth and proof don't match")
+    // console.log(blockDetail)
 
-    return { tx, txId, txIndex, stxBlockHeight, blockHeader, proof }
+    return {
+        tx: Buffer.from(txDetail.hex, "hex"),
+        txId: hexOrBufferToBuffer(txId),
+        txIndex,
+        stxBlockHeight,
+        blockHeader,
+        proof,
+        txDetail,
+        blockDetail
+    }
 }
 
-const txProofPromise = getTxProof(txid)
-
-txProofPromise
-    .then(({blockHeader, stxBlockHeight}: ProvableTx) => getBlockHeaderHash(stxBlockHeight))
-    .then(r => console.log(`getBlockheaderHash ${r.toString('hex')}`))
-    .catch(console.error)
-
-txProofPromise
-    .then(({blockHeader, stxBlockHeight}: ProvableTx) =>
-        verifyBlockHeader(blockHeader, stxBlockHeight))
-    .then(r => console.log(`verifyBlockHeader ${r}`))
-    .catch(console.error)
-
-txProofPromise
-    .then(({ stxBlockHeight, blockHeader, tx, txIndex, proof }: ProvableTx) =>
-        verifyProofOnStacks(stxBlockHeight, blockHeader, tx, txIndex, proof))
-    .then(r => console.log(`verifyProofOfStacks ${r}`))
-    .catch(console.error)
-
-txProofPromise
-    .then(({tx, txId}: ProvableTx) => getReversedTxId(tx))
-    .then(r => console.log(`getReversedTxId ${r.toString('hex')}`))
-    .catch(console.error)
-
-const SATOSHIS_PER_BITCOIN = new BigNumber("100000000")
-const toSatoshis = (v: number): string => new BigNumber(v).times(SATOSHIS_PER_BITCOIN).toString()
-
-/*
-{
-    "value": 0.00006121,
-    "n": 1,
-    "scriptPubKey": {
-      "asm": "OP_DUP OP_HASH160 0000000000000000000000000000000000000000 OP_EQUALVERIFY OP_CHECKSIG",
-      "desc": "addr(mfWxJ45yp2SFn7UciZyNpvDKrzbhyfKrY8)#ydtjlapp",
-      "hex": "76a914000000000000000000000000000000000000000088ac",
-      "address": "mfWxJ45yp2SFn7UciZyNpvDKrzbhyfKrY8",
-      "type": "pubkeyhash"
+export const toCompactProofCV = async ({
+                                           tx,
+                                           txIndex,
+                                           proof,
+                                           blockHeader,
+                                           stxBlockHeight
+                                       }: ProvableTx): Promise<any> => {
+    return {
+        compactHeader: tupleCV({
+            header: bufferCV(blockHeader),
+            height: uintCV(stxBlockHeight)
+        }),
+        tx: bufferCV(tx),
+        proof: tupleCV({
+            "tx-index": uintCV(txIndex),
+            hashes: listCV<BufferCV>(proof.map(p => bufferCV(reverseBuffer(p)))),
+            "tree-depth": uintCV(proof.length)
+        }),
     }
-  },
-*/
+}
 
-getRawTransaction(txid, true)
-    .then(({vin, vout, hex}) => {
-        // console.log(JSON.stringify(vin, undefined, 2))
-        // console.log(JSON.stringify(vout, undefined, 2))
-        const outputs = vout.map(({value, scriptPubKey: {hex}}: any) => (
-            {value: toSatoshis(value), scriptPubKey: Buffer.from(hex, 'hex')}
-        ))
-        return outputs
+export const toProofCV = async ({
+                                     tx,
+                                     txIndex,
+                                     proof,
+                                     stxBlockHeight,
+                                     blockDetail: {
+                                         versionHex,
+                                         previousblockhash,
+                                         merkleroot,
+                                         time,
+                                         bits,
+                                         nonce
+                                     }
+                                 }: ProvableTx): Promise<any> => {
+    return {
+        header: tupleCV({
+            version: bufferCV(Buffer.from(versionHex, 'hex')),
+            parent: bufferCV(Buffer.from(previousblockhash, 'hex')),
+            'merkle-root': bufferCV(Buffer.from(merkleroot, 'hex')),
+            timestamp: bufferCV(numberToBuffer(time, 4)),
+            nbits: bufferCV(Buffer.from(bits, 'hex')),
+            nonce: bufferCV(numberToBuffer(nonce, 4)),
+            height: uintCV(stxBlockHeight)
+        }),
+        tx: bufferCV(tx),
+        proof: tupleCV({
+            "tx-index": uintCV(txIndex),
+            hashes: listCV<BufferCV>(proof.map(p => bufferCV(reverseBuffer(p)))),
+            "tree-depth": uintCV(proof.length)
+        }),
+    }
+}
 
+const proofPromise = getTxProof(txid)
 
+proofPromise
+    .then(toCompactProofCV)
+    .then(async ({compactHeader, tx, proof}): Promise<boolean> => {
+        const result = await verifyCompactTx(compactHeader, tx, proof)
+        return result.value
     })
     .then(console.log)
-    .catch(console.error)
+    .catch(e => {
+        throw e
+    })
+
+proofPromise
+    .then(toProofCV)
+    .then(async ({header, tx, proof}): Promise<any> => {
+        const result = await verifyTx(header, tx, proof)
+        return result
+    })
+    .then(e => console.log(e))
+    .catch(e => console.error('bar:', e)) // TODO Fixme
