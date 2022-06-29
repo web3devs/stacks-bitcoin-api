@@ -4,10 +4,10 @@
 
 //TODO More complete tests and use mocha
 
-import {ProvableTx, Utils} from "../lib/index.js";
-import {BufferCV, cvToValue, getCVTypeString} from "@stacks/transactions";
+import { ProvableTx, Utils } from "../lib/index.js";
+import { BufferCV, cvToValue, getCVTypeString } from "@stacks/transactions";
 // @ts-ignore
-import {calculateTxId, concatHeader, verifyCompactTx, verifyTx} from "./ClarityBitcoinClient.js";
+import {concatHeader, verifyCompactTx, verifyTx} from "./ClarityBitcoinClient.js";
 
 // const txid = "4a992428186ef340c1137509c484f55793afe6a091dc1ae40169794a4b68a52c"
 // const txid = "20f85e35d02e28ac89db8764e280db560de1baaa3ce66f15dcea349fb137879c"
