@@ -30,7 +30,7 @@ Coinbase transactions are not supported.
 
 ## Coming soon
 This is an active work in progress. Future releases will include:
-- The call to `stacks-node-api` occasionally fails to retrieve the Stacks block height. There is an edge case condition that the binary search implementation is accounting for. Further analysis is needed to track this down.  
+- The call to `stacks-node-api` occasionally fails to retrieve the Stacks block height. There is an edge case condition that the binary search implementation isn't accounting for. Further analysis is needed to track this down.  
 - A contract endpoint and supporting API code to pass a transaction as a decompacted tuple instead of as a compacted buffer. This will enable contracts that use this API to easily extract values from the contract without requiring an extra on chain invokation of a `parse-tx` function.  
 - SeqWit transactions
 - Taproot transactions
