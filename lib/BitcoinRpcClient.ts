@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import {Buffer} from "buffer"
-import {hexOrBufferToHex} from "./utils.js"
+import {hexOrBufferToHex} from "./Utils.js"
 
 const {RPCURL, APIKEY} = process.env
 

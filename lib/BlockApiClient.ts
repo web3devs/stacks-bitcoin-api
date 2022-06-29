@@ -1,5 +1,5 @@
 import {BlocksApi, Configuration} from "@stacks/blockchain-api-client"
-import {compareToRange, Range, RangeComparison} from "./utils.js"
+import {compareToRange, Range, RangeComparison} from "./Utils.js"
 
 const { NETWORK } = process.env
 
