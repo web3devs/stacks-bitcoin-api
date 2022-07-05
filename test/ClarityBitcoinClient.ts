@@ -209,3 +209,14 @@ export const calculateTxId = (tx: BufferCV): Promise<ClarityValue> =>
         network: NETWORK as any,
         senderAddress: SENDER_ADDRESS as string,
     })
+
+export const calculateTxId = (tx: BufferCV): Promise<ClarityValue> =>
+    // (get-txid (tx (buff 1024)))
+    callReadOnlyFunction({
+        contractName: CLARITY_BITCOIN_CONTRACT_NAME as string,
+        contractAddress: CLARITY_BITCOIN_CONTRACT_ADDRESS as string,
+        functionName: 'get-txid',
+        functionArgs: [tx],
+        network: NETWORK as any,
+        senderAddress: SENDER_ADDRESS as string,
+    })
