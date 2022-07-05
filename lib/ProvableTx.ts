@@ -50,37 +50,44 @@ export default class ProvableTx {
 
     toCompactProofCV() {
         return {
-            compactHeader: tupleCV({
-                header: bufferCV(this.blockHeader),
-                height: uintCV(this.stxBlockHeight)
-            }),
+            compactHeader: this.getCompactHeaderCV(),
             tx: bufferCV(this.tx),
-            proof: tupleCV({
-                "tx-index": uintCV(this.txIndex),
-                hashes: listCV<BufferCV>(this.proof.map(p => bufferCV(reverseBuffer(p)))),
-                "tree-depth": uintCV(this.proof.length)
-            }),
+            proof: this.getProofCV(),
         }
     }
 
     toProofCV() {
         return {
-            header: tupleCV({
-                version: bufferCV(reverseBuffer(Buffer.from(this.blockDetail.versionHex, 'hex'))),
-                parent: bufferCV(reverseBuffer(Buffer.from(this.blockDetail.previousblockhash, 'hex'))),
-                'merkle-root': bufferCV(reverseBuffer(Buffer.from(this.blockDetail.merkleroot, 'hex'))),
-                timestamp: bufferCV(numberToBuffer(this.blockDetail.time, 4)),
-                nbits: bufferCV(reverseBuffer(Buffer.from(this.blockDetail.bits, 'hex'))),
-                nonce: bufferCV(numberToBuffer(this.blockDetail.nonce, 4)),
-                height: uintCV(this.stxBlockHeight)
-            }),
+            header: this.getHeaderCV(),
             tx: bufferCV(this.tx),
-            proof: tupleCV({
-                "tx-index": uintCV(this.txIndex),
-                hashes: listCV<BufferCV>(this.proof.map(p => bufferCV(reverseBuffer(p)))),
-                "tree-depth": uintCV(this.proof.length)
-            })
+            proof: this.getProofCV()
         }
     }
 
+    private getHeaderCV() {
+        return tupleCV({
+            version: bufferCV(reverseBuffer(Buffer.from(this.blockDetail.versionHex, 'hex'))),
+            parent: bufferCV(reverseBuffer(Buffer.from(this.blockDetail.previousblockhash, 'hex'))),
+            'merkle-root': bufferCV(reverseBuffer(Buffer.from(this.blockDetail.merkleroot, 'hex'))),
+            timestamp: bufferCV(numberToBuffer(this.blockDetail.time, 4)),
+            nbits: bufferCV(reverseBuffer(Buffer.from(this.blockDetail.bits, 'hex'))),
+            nonce: bufferCV(numberToBuffer(this.blockDetail.nonce, 4)),
+            height: uintCV(this.stxBlockHeight)
+        });
+    }
+
+    private getProofCV() {
+        return tupleCV({
+            "tx-index": uintCV(this.txIndex),
+            hashes: listCV<BufferCV>(this.proof.map(p => bufferCV(reverseBuffer(p)))),
+            "tree-depth": uintCV(this.proof.length)
+        });
+    }
+
+    private getCompactHeaderCV() {
+        return tupleCV({
+            header: bufferCV(this.blockHeader),
+            height: uintCV(this.stxBlockHeight)
+        });
+    }
 }
