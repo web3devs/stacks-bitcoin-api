@@ -18,11 +18,11 @@
     "@stacks/connect": "^6.8.4",
     "@stacks/network": "^4.3.0",
     "@stacks/transactions": "^4.2.1",
+    "bitcoinjs-lib": "^6.0.1",
     "bn.js": "^5.2.1",
     "cryptojs": "^2.5.3",
     "dotenv": "^16.0.1",
-    "merkletreejs": "^0.2.31",
-    "varint": "^6.0.0"
+    "merkletreejs": "^0.2.31"
   },
   "devDependencies": {
     "@types/crypto-js": "^4.1.1",
