@@ -4,16 +4,20 @@ import {getStxBlockHeight} from "./BlockApiClient.js"
 import {MerkleTree} from "merkletreejs"
 import {BufferCV, bufferCV, listCV, tupleCV, uintCV} from "@stacks/transactions"
 import SHA256 from "crypto-js/sha256.js"
+import {Transaction} from "bitcoinjs-lib";
+
+const SEGWIT_MARKER_OFFSET = 4
+const SEGWIT_FLAG_OFFSET = 5;
 
 export default class ProvableTx {
-    readonly tx: Buffer
-    readonly txId: Buffer
-    readonly txIndex: number
-    readonly stxBlockHeight: number
-    readonly blockHeader: Buffer
-    readonly proof: Buffer[]
-    readonly txDetail: any
-    readonly blockDetail: any
+    private readonly tx: Buffer
+    private readonly txId: Buffer
+    private readonly txIndex: number
+    private readonly stxBlockHeight: number
+    private readonly blockHeader: Buffer
+    private readonly proof: Buffer[]
+    private readonly txDetail: any
+    private readonly blockDetail: any
 
     private constructor(tx: Buffer, txId: Buffer, txIndex: number, stxBlockHeight: number, blockHeader: Buffer,
                 proof: Buffer[], txDetail: any, blockDetail: any) {
@@ -27,17 +31,29 @@ export default class ProvableTx {
         this.blockDetail = blockDetail
     }
 
+    // TODO There is some kind of race condition or buffer overrun happening when this function gets called more than once
     public static async fromTxId(txId: string | Buffer): Promise<ProvableTx> {
         const txIdHex = hexOrBufferToHex(txId)
         const txDetail = await getTransactionDetails(txIdHex)
+        const tx = Buffer.from(txDetail.hex, 'hex')
+        let txWithoutSegwit
+
+        const isSegwit = tx.readInt8(SEGWIT_MARKER_OFFSET) === 0
+        const segwitFlag = isSegwit ? tx.readInt8(SEGWIT_FLAG_OFFSET) : 0
+        if (isSegwit && segwitFlag === 1) {
+            txWithoutSegwit = Transaction.fromHex(txDetail.hex)
+                .toBuffer(undefined, undefined, false) // TODO This requires a hacked bitcoinjs-lib
+        }
+
         const blockHeader = Buffer.from(await getRawBlockHeader(txDetail.blockhash), 'hex')
         const blockDetail = await getBlockStats(txDetail.blockhash)
         const stxBlockHeight = await getStxBlockHeight(blockDetail.height) as number
         const txIndex = blockDetail.tx.findIndex((id: string) => id === txId)
+
         const tree = new MerkleTree(blockDetail.tx, SHA256, {isBitcoinTree: true})
         const proof = tree.getProof(blockDetail.tx, txIndex).map(p => p.data)
         return new ProvableTx(
-            Buffer.from(txDetail.hex, "hex"),
+            txWithoutSegwit || tx,
             hexOrBufferToBuffer(txId),
             txIndex,
             stxBlockHeight,

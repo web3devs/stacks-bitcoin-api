@@ -351,9 +351,10 @@ bip174@^2.0.1:
   resolved "https://registry.yarnpkg.com/bip174/-/bip174-2.1.0.tgz#cd3402581feaa5116f0f00a0eaee87a5843a2d30"
   integrity sha512-lkc0XyiX9E9KiVAS1ZiOqK1xfiwvf4FXDDdkDq5crcDzOq+xGytY+14qCsqz7kCiy8rpN1CRNfacRhf9G3JNSA==
 
-bitcoinjs-lib@web3devs/bitcoinjs-lib:
+bitcoinjs-lib@^6.0.1:
   version "6.0.1"
-  resolved "https://codeload.github.com/web3devs/bitcoinjs-lib/tar.gz/7883873440134cd544535841b87c9763396ee145"
+  resolved "https://registry.yarnpkg.com/bitcoinjs-lib/-/bitcoinjs-lib-6.0.1.tgz#4fa9438bb86a0449451ac58607e83d9b5a7732e6"
+  integrity sha512-x/7D4jDj/MMkmO6t3p2CSDXTqpwZ/jRsRiJDmaiXabrR9XRo7jwby8HRn7EyK1h24rKFFI7vI0ay4czl6bDOZQ==
   dependencies:
     bech32 "^2.0.0"
     bip174 "^2.0.1"
