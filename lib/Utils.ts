@@ -3,9 +3,6 @@ import {Buffer} from "buffer"
 import BN from "bn.js";
 import BigNumber from "bignumber.js";
 
-export const hexOrBufferToHex = (hob: string | Buffer) => typeof hob === 'string' ? hob : hob.toString('hex')
-export const hexOrBufferToBuffer = (hob: string | Buffer) => typeof hob === 'string' ? Buffer.from(hob, 'hex') : hob
-
 export type Range = {
     min: number,
     max: number
@@ -29,10 +26,14 @@ export const reverseBuffer = (buffer: Buffer): Buffer => {
 
 export const cvToBuffer = (cv: BufferCV): Buffer => Buffer.from(cvToValue(cv).slice(2), 'hex')
 
-
-export const numberToBuffer = (value: BN | number | string, size: number = 8): Buffer => reverseBuffer(Buffer.from(
+export const numberToBufferLE = (value: BN | number | string, size: number = 8): Buffer => reverseBuffer(Buffer.from(
     new BN(value).toString(16, size * 2),
     'hex'
 ))
+
+export const hexOrBufferToHex = (hob: string | Buffer) => typeof hob === 'string' ? hob : hob.toString('hex')
+export const hexOrBufferToBuffer = (hob: string | Buffer) => typeof hob === 'string' ? Buffer.from(hob, 'hex') : hob
+
+
 const toSatoshis = (v: number | string | BigNumber): BN => new BN(new BigNumber(v).shiftedBy(8).toString())
 const toBitcoins = (v: number): string => new BigNumber(v).shiftedBy(-8).toString()
