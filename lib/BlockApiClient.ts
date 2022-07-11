@@ -1,4 +1,5 @@
 import {BlocksApi, Configuration} from "@stacks/blockchain-api-client"
+import _ from "lodash"
 import {compareToRange, Range, RangeComparison} from "./Utils.js"
 
 const { NETWORK } = process.env
@@ -7,7 +8,7 @@ const config = new Configuration({basePath: `https://stacks-node-api.${NETWORK}.
 const blocksApi = new BlocksApi(config)
 
 // TODO This function occasionally misses the block, the binary search algo needs more analysis
-export async function getStxBlockHeight(bitcoinBlockHeight: number): Promise<number | undefined> {
+async function __getStxBlockHeight(bitcoinBlockHeight: number): Promise<number | undefined> {
     let limit = 30;
     let minOffset = 0, maxOffset = 0, offset = 0;
 
@@ -54,3 +55,4 @@ export async function getStxBlockHeight(bitcoinBlockHeight: number): Promise<num
     return stxBlock?.height;
 }
 
+export const getStxBlockHeight = _.memoize(__getStxBlockHeight)
