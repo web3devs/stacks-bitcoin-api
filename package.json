@@ -9,7 +9,7 @@
     "prepublish": "yarn run build",
     "build": "tsc",
     "clean": "rm -rf dist",
-    "test": "jest"
+    "test": "jest --verbose"
   },
   "author": "",
   "license": "ISC",
