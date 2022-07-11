@@ -9,7 +9,10 @@
     "prepublish": "yarn run build",
     "build": "tsc",
     "clean": "rm -rf dist",
-    "test": "jest --verbose"
+    "test": "yarn test:unit && yarn test:integration",
+    "test:watch": "jest --watch",
+    "test:integration": "jest --verbose test/**/*.integration.test.*",
+    "test:unit": "jest --verbose test/**/*.unit.test.*"
   },
   "author": "",
   "license": "ISC",
@@ -38,7 +41,9 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "extensionsToTreatAsEsm": [".ts"],
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
     "globals": {
       "ts-jest": {
         "useESM": true

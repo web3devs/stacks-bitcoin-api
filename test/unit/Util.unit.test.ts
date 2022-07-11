@@ -6,7 +6,7 @@ import {
     numberToBufferLE,
     RangeComparison,
     reverseBuffer
-} from "../lib/Utils.js";
+} from "../../lib/Utils.js";
 import {bufferCV, bufferCVFromString} from "@stacks/transactions";
 
 describe('reverseBuffer', () => {

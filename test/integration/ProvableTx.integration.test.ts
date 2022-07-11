@@ -1,4 +1,4 @@
-import {ProvableTx, Utils} from "../lib";
+import {ProvableTx, Utils} from "../../lib";
 // @ts-ignore
 import {concatHeader, verifyCompactTx, verifyTx} from "./ClarityBitcoinClient.js";
 import {BufferCV, cvToValue, getCVTypeString} from "@stacks/transactions";
