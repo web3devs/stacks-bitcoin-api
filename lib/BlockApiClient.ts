@@ -51,7 +51,7 @@ async function __getStxBlockHeight(bitcoinBlockHeight: number): Promise<number |
         // Binary search to avoid api throttling
         offset = Math.floor((minOffset + maxOffset) / 2)
     }
-    if (!stxBlock) { throw "foo" }
+    if (!stxBlock) { throw `Unable to find the stacks block that corresponds to bitcoin block ${bitcoinBlockHeight}` }
     return stxBlock?.height;
 }
 
