@@ -13,11 +13,13 @@ async function __getStxBlockHeight(bitcoinBlockHeight: number): Promise<number |
     let minOffset = 0, maxOffset = 0, offset = 0;
 
     // First check recent blocks
-    const firstResponse = await blocksApi.getBlockList({ offset, limit });
+    const firstResponse = await blocksApi.getBlockList({ offset, limit })
+    const currentBlockHeight = firstResponse.results[0].height
+
     let stxBlock = firstResponse.results.find(b => b.burn_block_height === bitcoinBlockHeight);
 
     // Next check the furthest possible block
-    offset += Math.max(limit, firstResponse.results[0].burn_block_height - bitcoinBlockHeight)
+    offset = Math.min(currentBlockHeight, firstResponse.results[0].burn_block_height - bitcoinBlockHeight) - limit
     minOffset = limit
     maxOffset = offset + limit
     while (!stxBlock) {
