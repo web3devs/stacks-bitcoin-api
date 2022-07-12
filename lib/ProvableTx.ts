@@ -99,14 +99,14 @@ export default class ProvableTx {
     private getProofCV() {
         return tupleCV({
             "tx-index": uintCV(this.txIndex),
-            hashes: listCV<BufferCV>(this.proof.map(p => bufferCV(reverseBuffer(p)))),
+            hashes: listCV<BufferCV>(this.proof.map(p => bufferCV(reverseBuffer(Buffer.from(p))))),
             "tree-depth": uintCV(this.proof.length)
         });
     }
 
     private getCompactHeaderCV() {
         return tupleCV({
-            header: bufferCV(this.blockHeader),
+            header: bufferCV(Buffer.from(this.blockHeader)),
             height: uintCV(this.stxBlockHeight)
         });
     }
