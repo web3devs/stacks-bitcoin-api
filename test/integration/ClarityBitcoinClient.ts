@@ -15,8 +15,7 @@ import {
     UIntCV
 } from "@stacks/transactions";
 
-import BN from "bn.js";
-import {cvToBuffer, reverseBuffer} from "../lib/Utils.js";
+import {cvToBuffer, reverseBuffer} from "../../lib/Utils.js";
 import {ClarityValue} from "@stacks/transactions/src/clarity/clarityValue";
 
 const {

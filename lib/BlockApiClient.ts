@@ -1,4 +1,5 @@
 import {BlocksApi, Configuration} from "@stacks/blockchain-api-client"
+import _ from "lodash"
 import {compareToRange, Range, RangeComparison} from "./Utils.js"
 
 const { NETWORK } = process.env
@@ -7,16 +8,18 @@ const config = new Configuration({basePath: `https://stacks-node-api.${NETWORK}.
 const blocksApi = new BlocksApi(config)
 
 // TODO This function occasionally misses the block, the binary search algo needs more analysis
-export async function getStxBlockHeight(bitcoinBlockHeight: number): Promise<number | undefined> {
+async function __getStxBlockHeight(bitcoinBlockHeight: number): Promise<number | undefined> {
     let limit = 30;
     let minOffset = 0, maxOffset = 0, offset = 0;
 
     // First check recent blocks
-    const firstResponse = await blocksApi.getBlockList({ offset, limit });
+    const firstResponse = await blocksApi.getBlockList({ offset, limit })
+    const currentBlockHeight = firstResponse.results[0].height
+
     let stxBlock = firstResponse.results.find(b => b.burn_block_height === bitcoinBlockHeight);
 
     // Next check the furthest possible block
-    offset += Math.max(limit, firstResponse.results[0].burn_block_height - bitcoinBlockHeight)
+    offset = Math.min(currentBlockHeight, firstResponse.results[0].burn_block_height - bitcoinBlockHeight) - limit
     minOffset = limit
     maxOffset = offset + limit
     while (!stxBlock) {
@@ -50,7 +53,8 @@ export async function getStxBlockHeight(bitcoinBlockHeight: number): Promise<num
         // Binary search to avoid api throttling
         offset = Math.floor((minOffset + maxOffset) / 2)
     }
-    if (!stxBlock) { throw "foo" }
+    if (!stxBlock) { throw `Unable to find the stacks block that corresponds to bitcoin block ${bitcoinBlockHeight}` }
     return stxBlock?.height;
 }
 
+export const getStxBlockHeight = _.memoize(__getStxBlockHeight)

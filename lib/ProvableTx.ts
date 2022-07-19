@@ -1,4 +1,4 @@
-import {hexOrBufferToBuffer, hexOrBufferToHex, numberToBuffer, reverseBuffer} from "./Utils.js"
+import {hexOrBufferToBuffer, hexOrBufferToHex, numberToBufferLE, reverseBuffer} from "./Utils.js"
 import {getBlockStats, getRawBlockHeader, getTransactionDetails} from "./BitcoinRpcClient.js"
 import {getStxBlockHeight} from "./BlockApiClient.js"
 import {MerkleTree} from "merkletreejs"
@@ -10,14 +10,14 @@ const SEGWIT_MARKER_OFFSET = 4
 const SEGWIT_FLAG_OFFSET = 5;
 
 export default class ProvableTx {
-    private readonly tx: Buffer
-    private readonly txId: Buffer
-    private readonly txIndex: number
-    private readonly stxBlockHeight: number
-    private readonly blockHeader: Buffer
-    private readonly proof: Buffer[]
-    private readonly txDetail: any
-    private readonly blockDetail: any
+    readonly tx: Buffer
+    readonly txId: Buffer
+    readonly txIndex: number
+    readonly stxBlockHeight: number
+    readonly blockHeader: Buffer
+    readonly proof: Buffer[]
+    readonly txDetail: any
+    readonly blockDetail: any
 
     private constructor(tx: Buffer, txId: Buffer, txIndex: number, stxBlockHeight: number, blockHeader: Buffer,
                 proof: Buffer[], txDetail: any, blockDetail: any) {
@@ -40,9 +40,13 @@ export default class ProvableTx {
 
         const isSegwit = tx.readInt8(SEGWIT_MARKER_OFFSET) === 0
         const segwitFlag = isSegwit ? tx.readInt8(SEGWIT_FLAG_OFFSET) : 0
-        if (isSegwit && segwitFlag === 1) {
-            txWithoutSegwit = Transaction.fromHex(txDetail.hex)
-                .toBuffer(undefined, undefined, false) // TODO This requires a hacked bitcoinjs-lib
+        if (isSegwit) {
+            if (segwitFlag === 1) {
+                txWithoutSegwit = Transaction.fromHex(txDetail.hex)
+                    .toBuffer(undefined, undefined, false) // TODO This requires a hacked bitcoinjs-lib
+            } else {
+                throw "unknown segwit flag value"
+            }
         }
 
         const blockHeader = Buffer.from(await getRawBlockHeader(txDetail.blockhash), 'hex')
@@ -85,9 +89,9 @@ export default class ProvableTx {
             version: bufferCV(reverseBuffer(Buffer.from(this.blockDetail.versionHex, 'hex'))),
             parent: bufferCV(reverseBuffer(Buffer.from(this.blockDetail.previousblockhash, 'hex'))),
             'merkle-root': bufferCV(reverseBuffer(Buffer.from(this.blockDetail.merkleroot, 'hex'))),
-            timestamp: bufferCV(numberToBuffer(this.blockDetail.time, 4)),
+            timestamp: bufferCV(numberToBufferLE(this.blockDetail.time, 4)),
             nbits: bufferCV(reverseBuffer(Buffer.from(this.blockDetail.bits, 'hex'))),
-            nonce: bufferCV(numberToBuffer(this.blockDetail.nonce, 4)),
+            nonce: bufferCV(numberToBufferLE(this.blockDetail.nonce, 4)),
             height: uintCV(this.stxBlockHeight)
         });
     }
@@ -95,14 +99,14 @@ export default class ProvableTx {
     private getProofCV() {
         return tupleCV({
             "tx-index": uintCV(this.txIndex),
-            hashes: listCV<BufferCV>(this.proof.map(p => bufferCV(reverseBuffer(p)))),
+            hashes: listCV<BufferCV>(this.proof.map(p => bufferCV(reverseBuffer(Buffer.from(p))))),
             "tree-depth": uintCV(this.proof.length)
         });
     }
 
     private getCompactHeaderCV() {
         return tupleCV({
-            header: bufferCV(this.blockHeader),
+            header: bufferCV(Buffer.from(this.blockHeader)),
             height: uintCV(this.stxBlockHeight)
         });
     }
