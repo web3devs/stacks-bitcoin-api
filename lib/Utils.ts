@@ -27,12 +27,6 @@ export const reverseBuffer = (buffer: Buffer): Buffer => {
     return buffer
 }
 
-console.assert(
-    reverseBuffer(Buffer.from('00010203', 'hex'))
-        .equals(Buffer.from('03020100', 'hex')),
-    'Reverse buffer failed'
-)
-
 export const cvToBuffer = (cv: BufferCV): Buffer => Buffer.from(cvToValue(cv).slice(2), 'hex')
 
 

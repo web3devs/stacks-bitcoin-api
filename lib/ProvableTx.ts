@@ -4,91 +4,106 @@ import {getStxBlockHeight} from "./BlockApiClient.js"
 import {MerkleTree} from "merkletreejs"
 import {BufferCV, bufferCV, listCV, tupleCV, uintCV} from "@stacks/transactions"
 import SHA256 from "crypto-js/sha256.js"
+import {Transaction} from "bitcoinjs-lib";
 
-interface ProvableTx {
-    tx: Buffer,
-    txId: Buffer,
-    txIndex: number,
-    stxBlockHeight: number,
-    blockHeader: Buffer,
-    proof: Buffer[],
-    txDetail: any,
-    blockDetail: any,
-}
+const SEGWIT_MARKER_OFFSET = 4
+const SEGWIT_FLAG_OFFSET = 5;
 
-export const getTxProof = async (txId: string | Buffer): Promise<ProvableTx> => {
-    // TODO Make this work for segwit txs
-    // TODO add handling of unknown transaction errors
-    const txIdHex = hexOrBufferToHex(txId)
-    const txDetail = await getTransactionDetails(txIdHex)
-    const blockHeader = Buffer.from(await getRawBlockHeader(txDetail.blockhash), 'hex')
-    const blockDetail = await getBlockStats(txDetail.blockhash)
-    const stxBlockHeight = await getStxBlockHeight(blockDetail.height) as number
-    const txIndex = blockDetail.tx.findIndex((id: string) => id === txId)
-    const tree = new MerkleTree(blockDetail.tx, SHA256, {isBitcoinTree: true})
-    const proof = tree.getProof(blockDetail.tx, txIndex).map(p => p.data)
-    return {
-        tx: Buffer.from(txDetail.hex, "hex"),
-        txId: hexOrBufferToBuffer(txId),
-        txIndex,
-        stxBlockHeight,
-        blockHeader,
-        proof,
-        txDetail,
-        blockDetail
+export default class ProvableTx {
+    private readonly tx: Buffer
+    private readonly txId: Buffer
+    private readonly txIndex: number
+    private readonly stxBlockHeight: number
+    private readonly blockHeader: Buffer
+    private readonly proof: Buffer[]
+    private readonly txDetail: any
+    private readonly blockDetail: any
+
+    private constructor(tx: Buffer, txId: Buffer, txIndex: number, stxBlockHeight: number, blockHeader: Buffer,
+                proof: Buffer[], txDetail: any, blockDetail: any) {
+        this.tx = tx
+        this.txId = txId
+        this.txIndex = txIndex
+        this.stxBlockHeight = stxBlockHeight
+        this.blockHeader = blockHeader
+        this.proof = proof
+        this.txDetail = txDetail
+        this.blockDetail = blockDetail
     }
-}
 
-export const toCompactProofCV = (
-    {
-        tx,
-        txIndex,
-        proof,
-        blockHeader,
-        stxBlockHeight
-    }: ProvableTx) => {
-    return {
-        compactHeader: tupleCV({
-            header: bufferCV(blockHeader),
-            height: uintCV(stxBlockHeight)
-        }),
-        tx: bufferCV(tx),
-        proof: tupleCV({
-            "tx-index": uintCV(txIndex),
-            hashes: listCV<BufferCV>(proof.map(p => bufferCV(reverseBuffer(p)))),
-            "tree-depth": uintCV(proof.length)
-        }),
-    }
-}
+    // TODO There is some kind of race condition or buffer overrun happening when this function gets called more than once
+    public static async fromTxId(txId: string | Buffer): Promise<ProvableTx> {
+        const txIdHex = hexOrBufferToHex(txId)
+        const txDetail = await getTransactionDetails(txIdHex)
+        const tx = Buffer.from(txDetail.hex, 'hex')
+        let txWithoutSegwit
 
-export const toProofCV = (
-    {
-        tx,
-        txIndex,
-        proof,
-        stxBlockHeight,
-        blockDetail: {
-            versionHex,
-            previousblockhash,
-            merkleroot,
-            time,
-            bits,
-            nonce
+        const isSegwit = tx.readInt8(SEGWIT_MARKER_OFFSET) === 0
+        const segwitFlag = isSegwit ? tx.readInt8(SEGWIT_FLAG_OFFSET) : 0
+        if (isSegwit && segwitFlag === 1) {
+            txWithoutSegwit = Transaction.fromHex(txDetail.hex)
+                .toBuffer(undefined, undefined, false) // TODO This requires a hacked bitcoinjs-lib
         }
-    }: ProvableTx) => ({
-        header: tupleCV({
-            version: bufferCV(reverseBuffer(Buffer.from(versionHex, 'hex'))),
-            parent: bufferCV(reverseBuffer(Buffer.from(previousblockhash, 'hex'))),
-            'merkle-root': bufferCV(reverseBuffer(Buffer.from(merkleroot, 'hex'))),
-            timestamp: bufferCV(numberToBuffer(time, 4)),
-            nbits: bufferCV(reverseBuffer(Buffer.from(bits, 'hex'))),
-            nonce: bufferCV(numberToBuffer(nonce, 4)),
-            height: uintCV(stxBlockHeight)
-        }),
-        tx: bufferCV(tx),
-        proof: tupleCV({
-            "tx-index": uintCV(txIndex),
-            hashes: listCV<BufferCV>(proof.map(p => bufferCV(reverseBuffer(p)))),
-            "tree-depth": uintCV(proof.length)
-        })
-    })
+
+        const blockHeader = Buffer.from(await getRawBlockHeader(txDetail.blockhash), 'hex')
+        const blockDetail = await getBlockStats(txDetail.blockhash)
+        const stxBlockHeight = await getStxBlockHeight(blockDetail.height) as number
+        const txIndex = blockDetail.tx.findIndex((id: string) => id === txId)
+
+        const tree = new MerkleTree(blockDetail.tx, SHA256, {isBitcoinTree: true})
+        const proof = tree.getProof(blockDetail.tx, txIndex).map(p => p.data)
+        return new ProvableTx(
+            txWithoutSegwit || tx,
+            hexOrBufferToBuffer(txId),
+            txIndex,
+            stxBlockHeight,
+            blockHeader,
+            proof,
+            txDetail,
+            blockDetail
+        )
+    }
+
+    toCompactProofCV() {
+        return {
+            compactHeader: this.getCompactHeaderCV(),
+            tx: bufferCV(this.tx),
+            proof: this.getProofCV(),
+        }
+    }
+
+    toProofCV() {
+        return {
+            header: this.getHeaderCV(),
+            tx: bufferCV(this.tx),
+            proof: this.getProofCV()
+        }
+    }
+
+    private getHeaderCV() {
+        return tupleCV({
+            version: bufferCV(reverseBuffer(Buffer.from(this.blockDetail.versionHex, 'hex'))),
+            parent: bufferCV(reverseBuffer(Buffer.from(this.blockDetail.previousblockhash, 'hex'))),
+            'merkle-root': bufferCV(reverseBuffer(Buffer.from(this.blockDetail.merkleroot, 'hex'))),
+            timestamp: bufferCV(numberToBuffer(this.blockDetail.time, 4)),
+            nbits: bufferCV(reverseBuffer(Buffer.from(this.blockDetail.bits, 'hex'))),
+            nonce: bufferCV(numberToBuffer(this.blockDetail.nonce, 4)),
+            height: uintCV(this.stxBlockHeight)
+        });
+    }
+
+    private getProofCV() {
+        return tupleCV({
+            "tx-index": uintCV(this.txIndex),
+            hashes: listCV<BufferCV>(this.proof.map(p => bufferCV(reverseBuffer(p)))),
+            "tree-depth": uintCV(this.proof.length)
+        });
+    }
+
+    private getCompactHeaderCV() {
+        return tupleCV({
+            header: bufferCV(this.blockHeader),
+            height: uintCV(this.stxBlockHeight)
+        });
+    }
+}
