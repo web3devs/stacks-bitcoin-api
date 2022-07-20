@@ -41,7 +41,7 @@ This is an active work in progress. Future releases will include:
 - Support bitcoin nodes other than GetBlock.
 
 ## Acknowledgements
-Thanks to Freiger from creating CatamaranSwaps where the feasiblity of verifying Bitcoin transactions in a Clarity contract was proven. Much of the code in the project was inspired by (or shamelessly copied) from his work. He was also critical to initiating the grant that paid for the work that is being done.
+Thanks to Freiger for creating CatamaranSwaps where the feasiblity of verifying Bitcoin transactions in a Clarity contract was proven. Much of the code in the project was inspired by (or shamelessly copied) from his work. He was also critical to initiating the grant that paid for the work that is being done.
 
 Thanks to the Stacks foundation for making this work possible. 
 
