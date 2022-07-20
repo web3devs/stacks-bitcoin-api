@@ -1,6 +1,6 @@
 {
   "name": "stacks-bitcoin-api",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Verify Bitcoin transactions using the clarity-bitcoin utility on stacks",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

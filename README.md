@@ -4,7 +4,7 @@
 Bitcoin-native integration is imperative to unleash the Stacks' ecosystem potential. Stacks is the only smart contract platform that can react to events on the Bitcoin blockchain (see Catamaran Swaps https://www.catamaranswaps.org/). This project allow smart contract developers to verify transactions which occured on the Bitcoin blockchain. This can be used to implement cross-chain swaps between bitcoin and Stacks assets (SIP-010 Fungible tokens, SIP-009 Non-Fungible Tokens or STX itself), accept bitcoin payment for Stacks assets, and read data embedded in a bitcoin transaction. It attempts to do so in an optimally performant way, enabling the building of truly unique applications that fully leverage Bitcoin’s unparalleled security features.
 
 ## How it works
-Bitcoin transaction data is pulled from a post-seqwit Bitcoin node using the RPC endpoint. The node must be an archive node. Initally, it assumes that it is using a [GetBlock](https://getblock.io/) node, since they offer a free tier node that meets all of the requirements.
+Bitcoin transaction data is pulled from a post-segwit Bitcoin node using the RPC endpoint. The node must be an archive node. Initally, it assumes that it is using a [GetBlock](https://getblock.io/) node, since they offer a free tier node that meets all of the requirements.
 
 A merkle proof for the transaction is created using the `merkletree` node module. In the future, it may be possible to eliminate this dependency by calling the `gettxoutproof` endpoint of Bitcoin RPC.
 
@@ -30,11 +30,7 @@ Coinbase transactions are not supported.
 
 ## Coming soon
 This is an active work in progress. Future releases will include:
-- The call to `stacks-node-api` occasionally fails to retrieve the Stacks block height. There is an edge case condition that the binary search implementation isn't accounting for. Further analysis is needed to track this down.  
-- A contract endpoint and supporting API code to pass a transaction as a decompacted tuple instead of as a compacted buffer. This will enable contracts that use this API to easily extract values from the contract without requiring an extra on chain invokation of a `parse-tx` function.  
-- SeqWit transactions
-- Taproot transactions
-- Classic multisig transactions
+- A contract endpoint and supporting API code to pass a transaction as a decompacted tuple instead of as a compacted buffer. This will enable contracts that use this API to easily extract values from the contract.  **Is this neeeded since the tx can be parsed with `parsetx`?**
 - Analysis of performance to ensure that 200 verifications per block can be supported
 
 ### Stretch Goals

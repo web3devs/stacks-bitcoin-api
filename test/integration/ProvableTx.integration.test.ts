@@ -1,8 +1,11 @@
 // @ts-ignore
 import _ from "lodash"
 import {ProvableTx, Utils} from "../../lib";
-import {concatHeader, verifyCompactTx, verifyTx} from "./ClarityBitcoinClient.js"
-import {BufferCV, cvToValue, getCVTypeString} from "@stacks/transactions"
+// @ts-ignore
+import {concatHeader, parseTx, verifyCompactTx, verifyTx} from "./ClarityBitcoinClient.js"
+import {bufferCV, BufferCV, bufferCVFromString, cvToJSON, cvToValue, getCVTypeString} from "@stacks/transactions"
+import {cvToBuffer} from "../../lib/Utils";
+import {value} from "bitcoinjs-lib/src/payments/lazy";
 
 jest.setTimeout(10000)
 
@@ -17,6 +20,7 @@ const integrationTests = (txType: string, txid: string) => {
         })
 
         afterEach(() => {
+            // Sanity check: provableTx should not be mutated
             expect(provableTx).toEqual(original)
         })
 
@@ -37,6 +41,31 @@ const integrationTests = (txType: string, txid: string) => {
             const result = await concatHeader(header)
             const returnedBlockHeader = getCVTypeString(result) === '(buff 80)' ? Utils.cvToBuffer(result as BufferCV).toString('hex') : result
             expect(returnedBlockHeader).toEqual(provableTx.blockHeader.toString('hex'))
+        })
+
+        test('parse the proven part of a tx', async () => {
+            const expectedScriptPubKeys = provableTx.txDetail.vout.map((o: any) => o.scriptPubKey?.hex)
+            const expectedOutputValues =  provableTx.txDetail.vout.map((o: any) => BigInt(Math.round(o.value * 10 ** 8)))
+
+            const result = await parseTx(bufferCV(provableTx.tx))
+
+            // Outputs
+
+            // @ts-ignore
+            const outs = result?.value?.data?.outs?.list.map(({data: {scriptPubKey, value}}) => ({
+                scriptPubKey: scriptPubKey.buffer,
+                value: value.value
+            }))
+
+            // Check the script pub keys
+            const actualScriptPubKeys = outs.map((o: { scriptPubKey: Buffer }) => o.scriptPubKey.toString('hex'))
+            expect(actualScriptPubKeys).toEqual(expectedScriptPubKeys)
+
+            // Check the output values
+            const actualValues = outs.map((o: any) => o.value)
+            expect(actualValues).toEqual(expectedOutputValues)
+
+            // TODO Check the rest of the values
         })
     })
 }
