@@ -30,11 +30,6 @@ Coinbase transactions can be verified, but the coinbase message is not accessibl
 
 Due to a limitation in the [clarity-bitcoin](https://github.com/friedger/clarity-catamaranswaps/blob/bb552b99ac7abf78c3b4f53b3516e27024595dc9/contracts/clarity-bitcoin.clar) smart contract, transactions with a scriptpubkey longer than 127 bytes will fail. This could cause problems for classic multisig transactions outputs and non-standard transactions that use a long script.
 
-## Coming soon
-This is an active work in progress. Future releases will include:
-- A contract endpoint and supporting API code to pass a transaction as a decompacted tuple instead of as a compacted buffer. This will enable contracts that use this API to easily extract values from the contract.  **Is this neeeded since the tx can be parsed with `parsetx`?**
-- Analysis of performance to ensure that 200 verifications per block can be supported
-
 ## Acknowledgements
 Thanks to Friedger for creating CatamaranSwaps where the feasiblity of verifying Bitcoin transactions in a Clarity contract was proven. Much of the code in the project was inspired by (or shamelessly copied) from his work. He was also critical to initiating the grant that paid for the work that is being done.
 
