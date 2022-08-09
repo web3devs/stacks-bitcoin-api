@@ -46,6 +46,13 @@ const integrationTests = (txType: string, txid: string) => {
         test('parse the proven part of a tx', async () => {
             const expectedScriptPubKeys = provableTx.txDetail.vout.map((o: any) => o.scriptPubKey?.hex)
             const expectedOutputValues =  provableTx.txDetail.vout.map((o: any) => BigInt(Math.round(o.value * 10 ** 8)))
+            const isCoinbase = provableTx.txDetail.vin.map(({coinbase}: any) => !!coinbase).includes(true)
+            const expectedInputs = provableTx.txDetail.vin.map(({txid, vout, sequence, scriptSig}: any) => ({
+                txid,
+                vout: (Number.isInteger(vout) && BigInt(vout)) || BigInt(0),
+                sequence: BigInt(sequence),
+                scriptSig: scriptSig?.hex || ''
+            }))
 
             const result = await parseTx(bufferCV(provableTx.tx))
 
@@ -65,7 +72,23 @@ const integrationTests = (txType: string, txid: string) => {
             const actualValues = outs.map((o: any) => o.value)
             expect(actualValues).toEqual(expectedOutputValues)
 
-            // TODO Check the rest of the values
+            if (!isCoinbase) {
+                // Inputs
+                // @ts-ignore
+                const actualInputs = result?.value?.data?.ins?.list.map(({data}) => ({
+                    txid: data.outpoint?.data?.hash?.buffer.toString('hex'),
+                    vout: data.outpoint?.data?.index?.value,
+                    scriptSig: data.scriptSig?.buffer?.toString('hex'),
+                    sequence: data.sequence?.value
+                }))
+                expect(actualInputs).toEqual(expectedInputs)
+            }
+
+            // The rest
+            // @ts-ignore
+            expect(result?.value?.data?.version?.value).toBe(BigInt(provableTx.txDetail.version))
+            // @ts-ignore
+            expect(result?.value?.data?.locktime?.value).toBe(BigInt(provableTx.txDetail.locktime))
         })
     })
 }
@@ -78,4 +101,5 @@ describe('integration tests', () => {
     integrationTests('standard P2PKH+OP_RETURN', '846570b2050b2d1cfd183be6bad0970ad6b60b099c6a2d585eb7a39865782bd5')
     integrationTests('standard P2SH', '75cdf7e0f9d2345c8ce4c5b45ad4ee483bf6c2d99bf503cea225132e20889ef4')
     integrationTests('V1_P2TR', '3c45aaa49e8654e747a33c307964bd5725b3a06b7e2c938bdac25e98c90a4592')
+    integrationTests('coinbase', '750b1fe1ecf1dcc364fdfd864fae1958144a74403e16b13fdd4c780b59a5ce5e')
 })
