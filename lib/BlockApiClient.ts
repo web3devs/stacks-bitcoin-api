@@ -7,7 +7,6 @@ const { NETWORK } = process.env
 const config = new Configuration({basePath: `https://stacks-node-api.${NETWORK}.stacks.co`})
 const blocksApi = new BlocksApi(config)
 
-// TODO This function occasionally misses the block, the binary search algo needs more analysis
 async function __getStxBlockHeight(bitcoinBlockHeight: number): Promise<number | undefined> {
     let limit = 30;
     let minOffset = 0, maxOffset = 0, offset = 0;
@@ -23,7 +22,6 @@ async function __getStxBlockHeight(bitcoinBlockHeight: number): Promise<number |
     minOffset = limit
     maxOffset = offset + limit
     while (!stxBlock) {
-        // console.log('offsets:', minOffset, offset, maxOffset)
         const blockListResponse = await blocksApi.getBlockList({ offset, limit });
         const blocks = blockListResponse.results;
 
@@ -32,18 +30,14 @@ async function __getStxBlockHeight(bitcoinBlockHeight: number): Promise<number |
             min: blocks[blocks.length-1].burn_block_height,
             max:  blocks[0].burn_block_height
         }
-        // console.log('heights:', range.min, bitcoinBlockHeight, range.max)
         switch (compareToRange(bitcoinBlockHeight, range)) {
             case RangeComparison.Contained:
-                // console.log('contained')
                 stxBlock = blocks.find(b => b.burn_block_height === bitcoinBlockHeight)
                 return stxBlock?.height
             case RangeComparison.Above:
-                // console.log('above')
                 maxOffset = Math.max(offset - limit, minOffset)
                 break
             case RangeComparison.Below:
-                // console.log('below')
                 minOffset = Math.min(offset + limit, maxOffset)
                 break
         }
