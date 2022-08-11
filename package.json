@@ -6,7 +6,7 @@
     "types": "dist/index.d.ts",
     "type": "module",
     "scripts": {
-        "prepublish": "yarn run build",
+        "prepublish": "yarn build",
         "build": "tsc",
         "clean": "rm -rf dist",
         "test": "yarn test:unit && yarn test:integration",
