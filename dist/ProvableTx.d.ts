@@ -1,14 +1,14 @@
 /// <reference types="node" />
-import { BufferCV } from "@stacks/transactions";
+import { BufferCV } from '@stacks/transactions';
 export default class ProvableTx {
-    private readonly tx;
-    private readonly txId;
-    private readonly txIndex;
-    private readonly stxBlockHeight;
-    private readonly blockHeader;
-    private readonly proof;
-    private readonly txDetail;
-    private readonly blockDetail;
+    readonly tx: Buffer;
+    readonly txId: Buffer;
+    readonly txIndex: number;
+    readonly stxBlockHeight: number;
+    readonly blockHeader: Buffer;
+    readonly proof: Buffer[];
+    readonly txDetail: any;
+    readonly blockDetail: any;
     private constructor();
     static fromTxId(txId: string | Buffer): Promise<ProvableTx>;
     toCompactProofCV(): {
