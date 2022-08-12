@@ -1,13 +1,13 @@
-import {hexOrBufferToBuffer, hexOrBufferToHex, numberToBufferLE, reverseBuffer} from "./Utils.js"
-import {getBlockStats, getRawBlockHeader, getTransactionDetails} from "./BitcoinRpcClient.js"
-import {getStxBlockHeight} from "./BlockApiClient.js"
-import {MerkleTree} from "merkletreejs"
-import {BufferCV, bufferCV, listCV, tupleCV, uintCV} from "@stacks/transactions"
-import SHA256 from "crypto-js/sha256.js"
-import {Transaction} from "bitcoinjs-lib";
+import { hexOrBufferToBuffer, hexOrBufferToHex, numberToBufferLE, reverseBuffer } from './Utils.js'
+import { getBlockStats, getRawBlockHeader, getTransactionDetails } from './BitcoinRpcClient.js'
+import { getStxBlockHeight } from './BlockApiClient.js'
+import { MerkleTree } from 'merkletreejs'
+import { BufferCV, bufferCV, listCV, tupleCV, uintCV } from '@stacks/transactions'
+import SHA256 from 'crypto-js/sha256.js'
+import { Transaction } from 'bitcoinjs-lib'
 
 const SEGWIT_MARKER_OFFSET = 4
-const SEGWIT_FLAG_OFFSET = 5;
+const SEGWIT_FLAG_OFFSET = 5
 
 export default class ProvableTx {
     readonly tx: Buffer
@@ -19,8 +19,16 @@ export default class ProvableTx {
     readonly txDetail: any
     readonly blockDetail: any
 
-    private constructor(tx: Buffer, txId: Buffer, txIndex: number, stxBlockHeight: number, blockHeader: Buffer,
-                proof: Buffer[], txDetail: any, blockDetail: any) {
+    private constructor(
+        tx: Buffer,
+        txId: Buffer,
+        txIndex: number,
+        stxBlockHeight: number,
+        blockHeader: Buffer,
+        proof: Buffer[],
+        txDetail: any,
+        blockDetail: any
+    ) {
         this.tx = tx
         this.txId = txId
         this.txIndex = txIndex
@@ -31,7 +39,6 @@ export default class ProvableTx {
         this.blockDetail = blockDetail
     }
 
-    // TODO There is some kind of race condition or buffer overrun happening when this function gets called more than once
     public static async fromTxId(txId: string | Buffer): Promise<ProvableTx> {
         const txIdHex = hexOrBufferToHex(txId)
         const txDetail = await getTransactionDetails(txIdHex)
@@ -42,20 +49,22 @@ export default class ProvableTx {
         const segwitFlag = isSegwit ? tx.readInt8(SEGWIT_FLAG_OFFSET) : 0
         if (isSegwit) {
             if (segwitFlag === 1) {
-                txWithoutSegwit = Transaction.fromHex(txDetail.hex)
-                    .toBuffer(undefined, undefined, false) // TODO This requires a hacked bitcoinjs-lib
+                // NOTE This requires a hacked bitcoinjs-lib
+                txWithoutSegwit = Transaction.fromHex(txDetail.hex).toBuffer(undefined, undefined, false)
             } else {
-                throw "unknown segwit flag value"
+                throw 'unknown segwit flag value'
             }
         }
 
         const blockHeader = Buffer.from(await getRawBlockHeader(txDetail.blockhash), 'hex')
         const blockDetail = await getBlockStats(txDetail.blockhash)
-        const stxBlockHeight = await getStxBlockHeight(blockDetail.height) as number
+        const stxBlockHeight = (await getStxBlockHeight(blockDetail.height)) as number
         const txIndex = blockDetail.tx.findIndex((id: string) => id === txId)
 
-        const tree = new MerkleTree(blockDetail.tx, SHA256, {isBitcoinTree: true})
-        const proof = tree.getProof(blockDetail.tx, txIndex).map(p => p.data)
+        const tree = new MerkleTree(blockDetail.tx, SHA256, {
+            isBitcoinTree: true,
+        })
+        const proof = tree.getProof(blockDetail.tx, txIndex).map((p) => p.data)
         return new ProvableTx(
             txWithoutSegwit || tx,
             hexOrBufferToBuffer(txId),
@@ -80,7 +89,7 @@ export default class ProvableTx {
         return {
             header: this.getHeaderCV(),
             tx: bufferCV(this.tx),
-            proof: this.getProofCV()
+            proof: this.getProofCV(),
         }
     }
 
@@ -92,22 +101,22 @@ export default class ProvableTx {
             timestamp: bufferCV(numberToBufferLE(this.blockDetail.time, 4)),
             nbits: bufferCV(reverseBuffer(Buffer.from(this.blockDetail.bits, 'hex'))),
             nonce: bufferCV(numberToBufferLE(this.blockDetail.nonce, 4)),
-            height: uintCV(this.stxBlockHeight)
-        });
+            height: uintCV(this.stxBlockHeight),
+        })
     }
 
     private getProofCV() {
         return tupleCV({
-            "tx-index": uintCV(this.txIndex),
-            hashes: listCV<BufferCV>(this.proof.map(p => bufferCV(reverseBuffer(Buffer.from(p))))),
-            "tree-depth": uintCV(this.proof.length)
-        });
+            'tx-index': uintCV(this.txIndex),
+            hashes: listCV<BufferCV>(this.proof.map((p) => bufferCV(reverseBuffer(Buffer.from(p))))),
+            'tree-depth': uintCV(this.proof.length),
+        })
     }
 
     private getCompactHeaderCV() {
         return tupleCV({
             header: bufferCV(Buffer.from(this.blockHeader)),
-            height: uintCV(this.stxBlockHeight)
-        });
+            height: uintCV(this.stxBlockHeight),
+        })
     }
 }

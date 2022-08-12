@@ -1,56 +1,63 @@
 {
-  "name": "stacks-bitcoin-api",
-  "version": "0.0.2",
-  "description": "Verify Bitcoin transactions using the clarity-bitcoin utility on stacks",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "type": "module",
-  "scripts": {
-    "prepublish": "yarn run build",
-    "build": "tsc",
-    "clean": "rm -rf dist",
-    "test": "yarn test:unit && yarn test:integration",
-    "test:watch": "jest --watch",
-    "test:integration": "jest --verbose test/**/*.integration.test.*",
-    "test:unit": "jest --verbose test/**/*.unit.test.*"
-  },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "@stacks/blockchain-api-client": "^4.0.1",
-    "@stacks/connect": "^6.8.4",
-    "@stacks/network": "^4.3.0",
-    "@stacks/transactions": "^4.2.1",
-    "bitcoinjs-lib": "web3devs/bitcoinjs-lib",
-    "bn.js": "^5.2.1",
-    "cryptojs": "^2.5.3",
-    "dotenv": "^16.0.1",
-    "merkletreejs": "^0.2.31"
-  },
-  "devDependencies": {
-    "@types/crypto-js": "^4.1.1",
-    "@types/jest": "^28.1.4",
-    "@types/lodash.clonedeep": "^4.5.7",
-    "@types/node": "^18.0.0",
-    "@types/varint": "^6.0.0",
-    "jest": "^28.1.2",
-    "ts-jest": "^28.0.5",
-    "ts-node": "^10.8.0",
-    "typescript": "^4.7.2"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node",
-    "extensionsToTreatAsEsm": [
-      ".ts"
-    ],
-    "globals": {
-      "ts-jest": {
-        "useESM": true
-      }
+    "name": "stacks-bitcoin-api",
+    "version": "0.0.2",
+    "description": "Verify Bitcoin transactions using the clarity-bitcoin utility on stacks",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "type": "module",
+    "scripts": {
+        "prepublish": "yarn build",
+        "build": "tsc",
+        "clean": "rm -rf dist",
+        "test": "yarn test:unit && yarn test:integration",
+        "test:watch": "jest --watch",
+        "test:integration": "jest --verbose test/**/*.integration.test.*",
+        "test:unit": "jest --verbose test/**/*.unit.test.*",
+        "prepare": "husky install"
     },
-    "moduleNameMapper": {
-      "^(\\.{1,2}/.*)\\.js$": "$1"
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@stacks/blockchain-api-client": "^4.0.1",
+        "@stacks/connect": "^6.8.4",
+        "@stacks/network": "^4.3.0",
+        "@stacks/transactions": "^4.2.1",
+        "bitcoinjs-lib": "web3devs/bitcoinjs-lib",
+        "bn.js": "^5.2.1",
+        "cryptojs": "^2.5.3",
+        "dotenv": "^16.0.1",
+        "merkletreejs": "^0.2.31"
+    },
+    "devDependencies": {
+        "@types/crypto-js": "^4.1.1",
+        "@types/jest": "^28.1.4",
+        "@types/lodash.clonedeep": "^4.5.7",
+        "@types/node": "^18.0.0",
+        "@types/varint": "^6.0.0",
+        "husky": "^8.0.1",
+        "jest": "^28.1.2",
+        "lint-staged": "^13.0.3",
+        "prettier": "2.7.1",
+        "ts-jest": "^28.0.5",
+        "ts-node": "^10.8.0",
+        "typescript": "^4.7.2"
+    },
+    "jest": {
+        "preset": "ts-jest",
+        "testEnvironment": "node",
+        "extensionsToTreatAsEsm": [
+            ".ts"
+        ],
+        "globals": {
+            "ts-jest": {
+                "useESM": true
+            }
+        },
+        "moduleNameMapper": {
+            "^(\\.{1,2}/.*)\\.js$": "$1"
+        }
+    },
+    "lint-staged": {
+        "**/*": "prettier --write --ignore-unknown"
     }
-  }
 }
