@@ -27,7 +27,7 @@ Never made an open source contribution before? Wondering how contributions work 
 
 # Where can I go for help?
 
-If you need help, you can ask questions on discord. Send a PM to `bgok#2963` describing the help you need and you will be directed to the right resource.
+If you need help, you can ask questions on discord. Send a DM to `bgok#2963` describing the help you need and you will be directed to the right resource.
 
 # What does the Code of Conduct mean for me?
 
